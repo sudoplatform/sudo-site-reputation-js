@@ -1,3 +1,6 @@
+import { NotAuthorizedError } from '@sudoplatform/sudo-common'
+import { CognitoIdentityCredentials } from 'aws-sdk/lib/core'
+
 import { DefaultRulesetProvider } from './default-ruleset-provider'
 
 jest.mock('aws-sdk/clients/s3', () => {
@@ -23,12 +26,26 @@ jest.mock('aws-sdk/clients/s3', () => {
   })
 })
 
-jest.mock('aws-sdk/lib/core', () => ({
-  CognitoIdentityCredentials: jest.fn((props) => ({
-    props,
-    getPromise: jest.fn(),
-  })),
-}))
+jest.mock('aws-sdk/lib/core', () => {
+  const CognitoIdentityCredentials = Object.assign(
+    jest.fn((props) => ({
+      props,
+      getPromise: jest.fn().mockImplementation(async () => {
+        if (CognitoIdentityCredentials.alwaysThrowAuthError) {
+          throw CognitoIdentityCredentials.alwaysThrowAuthError
+        }
+      }),
+      clearCachedId: jest.fn(),
+    })),
+    {
+      alwaysThrowAuthError: undefined,
+    },
+  )
+
+  return {
+    CognitoIdentityCredentials,
+  }
+})
 
 const mockUserClient = {
   getLatestAuthToken: jest.fn(),
@@ -40,6 +57,10 @@ const testProps = {
   poolId: 'POOL',
   identityPoolId: 'ID_POOL',
 }
+
+beforeEach(() => {
+  ;(CognitoIdentityCredentials as any).alwaysThrowAuthError = undefined
+})
 
 describe('DefaultRuleSetProvider', () => {
   describe('downloadRuleset()', () => {
@@ -64,6 +85,30 @@ describe('DefaultRuleSetProvider', () => {
 
       const result = await provider.downloadRuleset('etag1')
       expect(result).toEqual('not-modified')
+    })
+
+    it('should throw a `NotAuthorizedError` if user is not authorized', async () => {
+      ;(CognitoIdentityCredentials as any).alwaysThrowAuthError = {
+        code: 'NotAuthorizedException',
+      }
+
+      const provider = new DefaultRulesetProvider(testProps)
+
+      const promise = provider.downloadRuleset()
+
+      await expect(promise).rejects.toThrow(NotAuthorizedError)
+    })
+
+    it('should throw unspecified errors', async () => {
+      ;(CognitoIdentityCredentials as any).alwaysThrowAuthError = {
+        code: 'ServerError',
+      }
+
+      const provider = new DefaultRulesetProvider(testProps)
+
+      const promise = provider.downloadRuleset()
+
+      await expect(promise).rejects.not.toThrow(NotAuthorizedError)
     })
   })
 })

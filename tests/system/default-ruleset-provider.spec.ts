@@ -1,16 +1,25 @@
+import { NotAuthorizedError } from '@sudoplatform/sudo-common'
 import { SudoUserClient } from '@sudoplatform/sudo-user'
+import { AuthenticationStore } from '@sudoplatform/sudo-user/lib/core/auth-store'
 
 import {
   DefaultRulesetProvider,
   DefaultRulesetProviderProps,
 } from '../../src/default-ruleset-provider'
 import { RulesetContent } from '../../src/ruleset-provider'
-import { registerUser, sdkConfig } from './test-registration'
+import {
+  invalidateAuthTokens,
+  registerUser,
+  sdkConfig,
+} from './test-registration'
 
+let authStore: AuthenticationStore
 let userClient: SudoUserClient
 let testProps: DefaultRulesetProviderProps
-beforeAll(async () => {
-  userClient = await registerUser()
+beforeEach(async () => {
+  const services = await registerUser()
+  authStore = services.authStore
+  userClient = services.userClient
   testProps = {
     userClient,
     poolId: sdkConfig.identityService.poolId,
@@ -40,5 +49,14 @@ describe('DefaultRulesetProvider', () => {
     )
 
     expect(result2 as string).toBe('not-modified')
+  })
+
+  fit('should throw `NotAuthorizedError` if user is not authorized', async () => {
+    await invalidateAuthTokens(authStore, userClient)
+    const ruleSetProvider = new DefaultRulesetProvider(testProps)
+
+    const promise = ruleSetProvider.downloadRuleset()
+
+    await expect(promise).rejects.toThrow(NotAuthorizedError)
   })
 })

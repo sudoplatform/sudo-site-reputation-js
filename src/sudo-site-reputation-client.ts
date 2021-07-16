@@ -146,6 +146,14 @@ export class SudoSiteReputationClient {
   }
 
   /**
+   * Returns full list of known malicious sites
+   */
+  public async getMaliciousSites(): Promise<string[]> {
+    const ruleset = await this.rulesetList
+    return [...ruleset]
+  }
+
+  /**
    * Updates reputation data to latest server data
    */
   public async update(): Promise<void> {

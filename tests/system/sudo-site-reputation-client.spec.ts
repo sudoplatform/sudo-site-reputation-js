@@ -1,5 +1,3 @@
-import { SudoUserClient } from '@sudoplatform/sudo-user'
-
 import {
   SudoSiteReputationClient,
   SudoSiteReputationClientProps,
@@ -18,15 +16,14 @@ import {
 } from '../../lib/sudo-site-reputation-client'
 import { registerUser, sdkConfig } from './test-registration'
 
-let sudoUserClient: SudoUserClient
 let storageProvider: StorageProvider
 let testProps: SudoSiteReputationClientProps
 let rulesetProviderTestProps: DefaultRulesetProviderProps
 let rulesetProvider: RulesetProvider
 beforeAll(async () => {
-  sudoUserClient = await registerUser()
+  const services = await registerUser()
   rulesetProviderTestProps = {
-    userClient: sudoUserClient,
+    userClient: services.userClient,
     poolId: sdkConfig.identityService.poolId,
     identityPoolId: sdkConfig.identityService.identityPoolId,
     bucket: sdkConfig.identityService.staticDataBucket,
@@ -34,7 +31,7 @@ beforeAll(async () => {
   rulesetProvider = new DefaultRulesetProvider(rulesetProviderTestProps)
   storageProvider = new MemoryStorageProvider()
   testProps = {
-    sudoUserClient,
+    sudoUserClient: services.userClient,
     storageProvider,
     rulesetProvider,
   }
@@ -118,6 +115,16 @@ describe('SudoSiteReputationClient', () => {
         'federation.com',
       )
       expect(siteReputationData2.isMalicious).toBe(false)
+    })
+  })
+
+  describe('getMaliciousSites', () => {
+    it('should return full malicious sites list', async () => {
+      const siteReputationClient = new SudoSiteReputationClient(testProps)
+      await siteReputationClient.update()
+
+      const sites = await siteReputationClient.getMaliciousSites()
+      expect(sites.length).toBeGreaterThan(0)
     })
   })
 

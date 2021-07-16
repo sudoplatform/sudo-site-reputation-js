@@ -12,7 +12,7 @@
     "test:system": "jest -c jest.system.config.json",
     "build": "yarn build:clean && yarn build:js && yarn build:declarations && yarn build:docs",
     "build:clean": "rm -rf lib",
-    "build:docs": "typedoc --mode library --excludePrivate --out docs src/index.ts",
+    "build:docs": "typedoc --excludePrivate --out docs src/index.ts",
     "build:js": "yarn build:js:transpile",
     "build:js:transpile": "babel src --out-dir lib --extensions '.ts' --ignore '**/*.spec.ts'",
     "build:declarations": "tsc --project tsconfig.declarations.json",
@@ -24,20 +24,16 @@
     "docs",
     "lib"
   ],
-  "resolutions": {
-    "**/@mark.probst/typescript-json-schema/yargs/yargs-parser": "^19.0.1",
-    "node-fetch": "^2.6.1"
-  },
   "peerDependencies": {
-    "@sudoplatform/sudo-common": "^3.0.0",
-    "@sudoplatform/sudo-user": "^2.0.1"
+    "@sudoplatform/sudo-common": "^5.0.0",
+    "@sudoplatform/sudo-user": "^8.0.0"
   },
   "dependencies": {
     "aws-sdk": "^2.721.0",
     "fp-ts": "^2.7.1",
     "io-ts": "^2.2.10",
     "lodash": "^4.17.19",
-    "url-parse": "^1.4.7"
+    "url-parse": "^1.5.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.5",
@@ -48,8 +44,8 @@
     "@babel/plugin-transform-modules-commonjs": "^7.12.1",
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-typescript": "^7.10.4",
-    "@sudoplatform/sudo-common": "^3.0.0",
-    "@sudoplatform/sudo-user": "^2.0.1",
+    "@sudoplatform/sudo-common": "^5.2.1",
+    "@sudoplatform/sudo-user": "^8.0.0",
     "@types/bunyan": "^1.8.6",
     "@types/jest": "^26.0.7",
     "@types/lodash": "^4.14.158",
@@ -66,10 +62,11 @@
     "graphql": "^15.4.0",
     "import-sort-style-module": "^6.0.0",
     "isomorphic-fetch": "^3.0.0",
+    "isomorphic-webcrypto": "^2.3.8",
     "jest": "^26.1.0",
     "prettier": "^2.0.5",
     "prettier-plugin-import-sort": "^0.0.6",
-    "typedoc": "0.17.0-3",
+    "typedoc": "^0.20.36",
     "typescript": "^3.9.7"
   },
   "importSort": {

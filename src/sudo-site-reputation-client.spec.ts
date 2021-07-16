@@ -205,6 +205,24 @@ describe('SudoSiteReputationClient', () => {
     )
   })
 
+  describe('getMaliciousSites', () => {
+    it('should return full malicious sites list', async () => {
+      const siteReputationClient = new SudoSiteReputationClient(testProps)
+      await siteReputationClient.update()
+
+      const sites = await siteReputationClient.getMaliciousSites()
+      expect(sites).toEqual(['buybuybuy.com', 'federation.com', 'romulan.com'])
+    })
+
+    it('should throw if update is needed', async () => {
+      const siteReputationClient = new SudoSiteReputationClient(testProps)
+      const sitesPromise = siteReputationClient.getMaliciousSites()
+      await expect(sitesPromise).rejects.toThrow(
+        'Reputation data is not present. Call `update` to obtain the latest reputation data.',
+      )
+    })
+  })
+
   describe('update()', () => {
     it('should update ruleset', async () => {
       const newRulesetProvider = new MockRuleSetProvider()
