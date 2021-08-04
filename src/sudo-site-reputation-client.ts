@@ -99,9 +99,7 @@ export class SudoSiteReputationClient {
   constructor(private props: SudoSiteReputationClientProps) {
     this.config =
       props?.config ??
-      DefaultConfigurationManager.getInstance().bindConfigSet<IotsConfig>(
-        IotsConfig,
-      )
+      DefaultConfigurationManager.getInstance().bindConfigSet(IotsConfig)
 
     this.storageProvider = props?.storageProvider ?? new MemoryStorageProvider()
 
@@ -111,7 +109,8 @@ export class SudoSiteReputationClient {
         userClient: props.sudoUserClient,
         poolId: this.config.identityService.poolId,
         identityPoolId: this.config.identityService.identityPoolId,
-        bucket: this.config.identityService.staticDataBucket,
+        bucket: this.config.siteReputationService.bucket,
+        bucketRegion: this.config.siteReputationService.region,
       })
 
     // Initialize client to be queried from cached data if available

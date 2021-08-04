@@ -24,7 +24,8 @@ beforeEach(async () => {
     userClient,
     poolId: sdkConfig.identityService.poolId,
     identityPoolId: sdkConfig.identityService.identityPoolId,
-    bucket: sdkConfig.identityService.staticDataBucket,
+    bucket: sdkConfig.siteReputationService.bucket,
+    bucketRegion: sdkConfig.siteReputationService.region,
   }
 })
 

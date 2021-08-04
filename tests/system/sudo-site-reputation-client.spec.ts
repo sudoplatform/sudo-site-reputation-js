@@ -26,7 +26,8 @@ beforeAll(async () => {
     userClient: services.userClient,
     poolId: sdkConfig.identityService.poolId,
     identityPoolId: sdkConfig.identityService.identityPoolId,
-    bucket: sdkConfig.identityService.staticDataBucket,
+    bucket: sdkConfig.siteReputationService.bucket,
+    bucketRegion: sdkConfig.siteReputationService.region,
   }
   rulesetProvider = new DefaultRulesetProvider(rulesetProviderTestProps)
   storageProvider = new MemoryStorageProvider()

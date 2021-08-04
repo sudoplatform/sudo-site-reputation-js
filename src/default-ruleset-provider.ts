@@ -5,8 +5,7 @@ import { CognitoIdentityCredentials } from 'aws-sdk/lib/core'
 
 import { RulesetContent, RulesetProvider } from './ruleset-provider'
 
-const s3Region = 'us-east-1'
-const s3Prefix = '/site-reputation/reputation-lists/'
+const s3Prefix = '/reputation-lists/'
 const s3RulesetKey = `${s3Prefix}MALICIOUSDOMAIN/urlhaus-filter-domains-online.txt`
 
 export interface DefaultRulesetProviderProps {
@@ -14,6 +13,7 @@ export interface DefaultRulesetProviderProps {
   poolId: string
   identityPoolId: string
   bucket: string
+  bucketRegion: string
 }
 
 export class DefaultRulesetProvider implements RulesetProvider {
@@ -79,7 +79,7 @@ export class DefaultRulesetProvider implements RulesetProvider {
     }
 
     return new S3({
-      region: s3Region,
+      region: this.props.bucketRegion,
       credentials: credentials,
     })
   }

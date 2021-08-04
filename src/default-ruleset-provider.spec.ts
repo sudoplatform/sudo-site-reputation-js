@@ -54,6 +54,7 @@ const mockUserClient = {
 const testProps = {
   userClient: mockUserClient as any,
   bucket: 'BUCKET',
+  bucketRegion: 'REGION',
   poolId: 'POOL',
   identityPoolId: 'ID_POOL',
 }
