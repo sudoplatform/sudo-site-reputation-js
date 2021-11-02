@@ -6,9 +6,11 @@ import { DefaultRulesetProvider } from './default-ruleset-provider'
 import { ReputationDataNotPresentError } from './errors'
 import { MemoryStorageProvider } from './memory-storage-provider'
 import { RulesetContent, RulesetProvider } from './ruleset-provider'
+import { RulesetType } from './ruleset-type'
 import { StorageProvider } from './storage-provider'
 
-export const rulesetStorageKey = 'rulesetStorageKey'
+export const malwareRulesetStorageKey = 'maliciousRulesetStorageKey'
+export const phishingRulesetStorageKey = 'phishingRulesetStorageKey'
 export const lastUpdatePerformedAtStorageKey = 'lastUpdatePerformedAtStorageKey'
 
 export enum Status {
@@ -94,7 +96,7 @@ export class SudoSiteReputationClient {
   private config: Config
   private storageProvider: StorageProvider
   private rulesetProvider: RulesetProvider
-  private rulesetList!: Promise<string[]>
+  private rulesetList!: Promise<Record<RulesetType, string[]>>
 
   constructor(private props: SudoSiteReputationClientProps) {
     this.config =
@@ -113,8 +115,7 @@ export class SudoSiteReputationClient {
         bucketRegion: this.config.siteReputationService.region,
       })
 
-    // Initialize client to be queried from cached data if available
-    this.initializeRulesetList()
+    this.initializeRulesetLists()
   }
 
   /**
@@ -135,11 +136,7 @@ export class SudoSiteReputationClient {
       }
     }
 
-    const rulesetList = await this.rulesetList
-    const isMalicious = this.checkIfDomainIsMalicious(
-      domainToCheck,
-      rulesetList,
-    )
+    const isMalicious = await this.checkIfDomainIsMalicious(domainToCheck)
 
     return { isMalicious }
   }
@@ -148,8 +145,8 @@ export class SudoSiteReputationClient {
    * Returns full list of known malicious sites
    */
   public async getMaliciousSites(): Promise<string[]> {
-    const ruleset = await this.rulesetList
-    return [...ruleset]
+    const rulesetList = await this.rulesetList
+    return [...rulesetList.MALWARE, ...rulesetList.PHISHING]
   }
 
   /**
@@ -160,7 +157,7 @@ export class SudoSiteReputationClient {
     await this.fetchRulesetList()
 
     // Re-prepare, using cached data
-    this.initializeRulesetList()
+    await this.initializeRulesetLists()
   }
 
   public get lastUpdatePerformedAt(): Date | undefined {
@@ -176,28 +173,78 @@ export class SudoSiteReputationClient {
    */
   public async clearStorage(): Promise<void> {
     // Clear specific cache data
-    await this.storageProvider.clearItem(rulesetStorageKey)
+    await this.storageProvider.clearItem(malwareRulesetStorageKey)
+    await this.storageProvider.clearItem(phishingRulesetStorageKey)
     await this.storageProvider.clearItem(lastUpdatePerformedAtStorageKey)
 
     this._lastUpdatePerformedAt = undefined
 
-    this.initializeRulesetList()
+    this.initializeRulesetLists()
   }
 
   /**
    * Retrieves ruleset list from cache and prepares client for
    * queries to {@link SudoSiteReputationClient.getSiteReputation}.
    */
-  private initializeRulesetList(): void {
+  private async initializeRulesetLists(): Promise<void> {
     this.updateStatus(Status.Preparing)
 
-    const newRulesetList = new Promise<string[]>(async (resolve, reject) => {
+    const newRulesetList = new Promise<Record<RulesetType, string[]>>(
+      async (resolve, reject) => {
+        try {
+          const rulesetList: Record<RulesetType, string[]> = {
+            [RulesetType.MALWARE]: [],
+            [RulesetType.PHISHING]: [],
+            [RulesetType.MALICIOUSDOMAIN]: [],
+          }
+          rulesetList.MALWARE = await this.getUpdatedRulesetList(
+            RulesetType.MALWARE,
+          )
+          rulesetList.PHISHING = await this.getUpdatedRulesetList(
+            RulesetType.PHISHING,
+          )
+
+          this.updateStatus(Status.Ready)
+          resolve(rulesetList)
+        } catch (error) {
+          if (error instanceof ReputationDataNotPresentError) {
+            this.updateStatus(Status.NeedUpdate)
+          } else {
+            this.updateStatus(Status.Error)
+          }
+          reject(error)
+        }
+      },
+    )
+
+    this.rulesetList = newRulesetList
+    this.rulesetList.catch(() => undefined)
+  }
+
+  private async getUpdatedRulesetList(
+    rulesetType: RulesetType,
+  ): Promise<string[]> {
+    return new Promise<string[]>(async (resolve, reject) => {
       try {
         let rulesetList
         const lastUpdatePerformedAt = await this.storageProvider.getItem(
           lastUpdatePerformedAtStorageKey,
         )
-        const storedRulesetContent = await this.getStoredRulesetContent()
+        let storedRulesetContent
+        switch (rulesetType) {
+          case RulesetType.MALWARE:
+            storedRulesetContent = await this.getStoredRulesetContent(
+              malwareRulesetStorageKey,
+            )
+            break
+          case RulesetType.PHISHING:
+            storedRulesetContent = await this.getStoredRulesetContent(
+              phishingRulesetStorageKey,
+            )
+            break
+          default:
+            throw new Error('Ruleset type ${type} not supported')
+        }
 
         if (!storedRulesetContent || !lastUpdatePerformedAt) {
           throw new ReputationDataNotPresentError()
@@ -206,7 +253,6 @@ export class SudoSiteReputationClient {
           this._lastUpdatePerformedAt = new Date(lastUpdatePerformedAt)
         }
 
-        this.updateStatus(Status.Ready)
         resolve(rulesetList)
       } catch (error) {
         if (error instanceof ReputationDataNotPresentError) {
@@ -217,9 +263,6 @@ export class SudoSiteReputationClient {
         reject(error)
       }
     })
-
-    this.rulesetList = newRulesetList
-    this.rulesetList.catch(() => undefined)
   }
 
   private async setLastUpdatePerformedAt(): Promise<void> {
@@ -245,51 +288,98 @@ export class SudoSiteReputationClient {
   }
 
   /**
-   * Fetches latest ruleset list from provider and
+   * Fetches latest ruleset lists from provider and
    * updates cache.
    */
   private async fetchRulesetList(): Promise<void> {
-    const storedRulesetContent = await this.getStoredRulesetContent()
+    // First get the MALWARE list
+    const storedMalwareRulesetContent = await this.getStoredRulesetContent(
+      malwareRulesetStorageKey,
+    )
 
     // Check for latest data
-    const rulesetContent = await this.rulesetProvider.downloadRuleset(
-      storedRulesetContent?.cacheKey,
+    const rulesetContentMalware = await this.rulesetProvider.downloadRuleset(
+      RulesetType.MALWARE,
+      storedMalwareRulesetContent?.cacheKey,
     )
-    await this.setLastUpdatePerformedAt()
 
     // Return stored ruleset if we have it cached
-    if (rulesetContent === 'not-modified') {
-      if (!storedRulesetContent) {
-        throw new Error('Unexpected: no stored ruleset')
+    if (rulesetContentMalware === 'not-modified') {
+      if (!storedMalwareRulesetContent) {
+        throw new Error('Unexpected: no stored MALWARE ruleset')
       }
-    } else if (rulesetContent.cacheKey) {
+    } else if (rulesetContentMalware.cacheKey) {
       // Cache new ruleset data
-      this.setStoredRulesetContent(rulesetContent.cacheKey, rulesetContent.data)
+      await this.setStoredRulesetContent(
+        RulesetType.MALWARE,
+        rulesetContentMalware.cacheKey,
+        rulesetContentMalware.data,
+      )
     }
-  }
 
-  private async getStoredRulesetContent(): Promise<RulesetContent | undefined> {
-    const storedRulesetContent = await this.storageProvider.getItem(
-      rulesetStorageKey,
+    // Then get the PHISHING list
+    const storedPhishingRulesetContent = await this.getStoredRulesetContent(
+      phishingRulesetStorageKey,
     )
 
+    // Check for latest data
+    const rulesetContentPhishing = await this.rulesetProvider.downloadRuleset(
+      RulesetType.PHISHING,
+      storedPhishingRulesetContent?.cacheKey,
+    )
+
+    // Return stored ruleset if we have it cached
+    if (rulesetContentPhishing === 'not-modified') {
+      if (!storedPhishingRulesetContent) {
+        throw new Error('Unexpected: no stored PHISHING ruleset')
+      }
+    } else if (rulesetContentPhishing.cacheKey) {
+      // Cache new ruleset data
+      await this.setStoredRulesetContent(
+        RulesetType.PHISHING,
+        rulesetContentPhishing.cacheKey,
+        rulesetContentPhishing.data,
+      )
+    }
+    await this.setLastUpdatePerformedAt()
+  }
+
+  /**
+   * Returns the ruleset that is stored in the cache
+   */
+  private async getStoredRulesetContent(
+    storageKey: string,
+  ): Promise<RulesetContent | undefined> {
+    const storedRulesetContent = await this.storageProvider.getItem(storageKey)
     return storedRulesetContent && JSON.parse(storedRulesetContent)
   }
 
   private async setStoredRulesetContent(
+    rulesetType: RulesetType,
     cacheKey: string,
     data: string,
   ): Promise<void> {
-    await this.storageProvider.setItem(
-      rulesetStorageKey,
-      JSON.stringify({ data, cacheKey }),
-    )
+    let key = ''
+    switch (rulesetType) {
+      case RulesetType.MALICIOUSDOMAIN:
+        // no-op
+        break
+      case RulesetType.MALWARE:
+        key = malwareRulesetStorageKey
+        break
+      case RulesetType.PHISHING:
+        key = phishingRulesetStorageKey
+        break
+    }
+    await this.storageProvider.setItem(key, JSON.stringify({ data, cacheKey }))
   }
 
-  private checkIfDomainIsMalicious(
-    domain: string,
-    rulesetList: string[],
-  ): boolean {
+  private async checkIfDomainIsMalicious(domain: string): Promise<boolean> {
+    const rulesetList = await this.getMaliciousSites()
+    if (rulesetList.length === 0) {
+      this.updateStatus(Status.NeedUpdate)
+      throw new ReputationDataNotPresentError()
+    }
     return rulesetList.some((d) => d === domain || domain.endsWith(`.${d}`))
   }
 }

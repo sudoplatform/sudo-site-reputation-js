@@ -12,8 +12,9 @@ import { StorageProvider } from '../../lib/storage-provider'
 import {
   Status,
   lastUpdatePerformedAtStorageKey,
-  rulesetStorageKey,
+  malwareRulesetStorageKey,
 } from '../../lib/sudo-site-reputation-client'
+import { RulesetType } from '../../src'
 import { registerUser, sdkConfig } from './test-registration'
 
 let storageProvider: StorageProvider
@@ -62,32 +63,50 @@ describe('SudoSiteReputationClient', () => {
     it('should return true for malicious sites', async () => {
       const siteReputationClient = new SudoSiteReputationClient(testProps)
 
-      const rulesetContent = await rulesetProvider.downloadRuleset()
+      await siteReputationClient.update()
 
-      if (rulesetContent === 'not-modified') fail()
+      const rulesetContentMalware = await rulesetProvider.downloadRuleset(
+        RulesetType.MALWARE,
+      )
 
-      // Use 5 domains from ruleset for test
-      const maliciousDomains = rulesetContent.data
+      const rulesetContentPhishing = await rulesetProvider.downloadRuleset(
+        RulesetType.PHISHING,
+      )
+
+      if (rulesetContentMalware === 'not-modified') fail()
+      if (rulesetContentPhishing === 'not-modified') fail()
+
+      // Use 5 domains from each ruleset for test
+      const malwareDomains = rulesetContentMalware.data
+        .split('\n')
+        .filter((d) => !!d && !d.startsWith('#'))
+        .map((d) => d.trim())
+        .slice(0, 5)
+      const phishingDomains = rulesetContentPhishing.data
         .split('\n')
         .filter((d) => !!d && !d.startsWith('#'))
         .map((d) => d.trim())
         .slice(0, 5)
 
-      await siteReputationClient.update()
-      const siteReputationDatas = await Promise.all(
-        maliciousDomains.map((md) =>
-          siteReputationClient.getSiteReputation(md),
-        ),
+      const siteReputationDataMalware = await Promise.all(
+        malwareDomains.map((md) => siteReputationClient.getSiteReputation(md)),
+      )
+      const siteReputationDataPhishing = await Promise.all(
+        phishingDomains.map((pd) => siteReputationClient.getSiteReputation(pd)),
       )
 
-      expect(siteReputationDatas.every((srd) => srd.isMalicious)).toBe(true)
+      expect(siteReputationDataMalware.every((srd) => srd.isMalicious)).toBe(
+        true,
+      )
+      expect(siteReputationDataPhishing.every((srd) => srd.isMalicious)).toBe(
+        true,
+      )
     })
 
-    it('should throw if no ruleset list', async () => {
+    it('should throw and update the status to NeedUpdate if no ruleset list', async () => {
       const siteReputationClient = new SudoSiteReputationClient(testProps)
 
       const promise = siteReputationClient.getSiteReputation('federation.com')
-
       await expect(promise).rejects.toThrow(
         'Reputation data is not present. Call `update` to obtain the latest reputation data.',
       )
@@ -137,7 +156,7 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.getSiteReputation('www.domain.com')
 
       const rulesetDataBeforeClear = await storageProvider.getItem(
-        rulesetStorageKey,
+        malwareRulesetStorageKey,
       )
       const lastUpdateBeforeClear = await storageProvider.getItem(
         lastUpdatePerformedAtStorageKey,
@@ -149,7 +168,7 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.clearStorage()
 
       const rulesetDataAfterClear = await storageProvider.getItem(
-        rulesetStorageKey,
+        malwareRulesetStorageKey,
       )
       const lastUpdateAfterClear = await storageProvider.getItem(
         lastUpdatePerformedAtStorageKey,

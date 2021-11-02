@@ -3,5 +3,7 @@
  */
 export enum RulesetType {
   /** A ruleset that blocks malicious domains */
-  MALICIOUSDOMAIN = 'malicious-domain',
+  MALICIOUSDOMAIN = 'MALICIOUSDOMAIN',
+  MALWARE = 'MALWARE',
+  PHISHING = 'PHISHING',
 }

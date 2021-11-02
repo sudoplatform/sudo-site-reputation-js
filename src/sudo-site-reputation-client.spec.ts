@@ -3,13 +3,16 @@ import {
   MockRuleSetProvider,
   mockRuleset1,
   mockRuleset2,
+  mockRuleset3,
+  mockRuleset4,
 } from './mock-ruleset-provider'
 import {
   Status,
   SudoSiteReputationClient,
   SudoSiteReputationClientProps,
   lastUpdatePerformedAtStorageKey,
-  rulesetStorageKey,
+  malwareRulesetStorageKey,
+  phishingRulesetStorageKey,
 } from './sudo-site-reputation-client'
 
 const storageProvider = new MemoryStorageProvider()
@@ -38,7 +41,9 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.update()
       await siteReputationClient.getSiteReputation('www.domain.com')
 
-      const storageItem = await storageProvider.getItem(rulesetStorageKey)
+      const storageItem = await storageProvider.getItem(
+        malwareRulesetStorageKey,
+      )
       expect(JSON.parse(storageItem).data).toBe(mockRuleset1._rules.join('\n'))
       expect(JSON.parse(storageItem).cacheKey).toBe(mockRuleset1.location)
     })
@@ -71,7 +76,14 @@ describe('SudoSiteReputationClient', () => {
     it('should initialize from cached data', async () => {
       const lastUpdate = new Date('2021-01-01T00:00:00Z')
       await storageProvider.setItem(
-        rulesetStorageKey,
+        malwareRulesetStorageKey,
+        JSON.stringify({
+          data: mockRuleset1._rules.join('\n'),
+          cacheKey: mockRuleset1.location,
+        }),
+      )
+      await storageProvider.setItem(
+        phishingRulesetStorageKey,
         JSON.stringify({
           data: mockRuleset2._rules.join('\n'),
           cacheKey: mockRuleset2.location,
@@ -178,7 +190,7 @@ describe('SudoSiteReputationClient', () => {
       async ({ hasLastUpdatePerformedAt, expectation }) => {
         // Arrange
         await storageProvider.setItem(
-          rulesetStorageKey,
+          malwareRulesetStorageKey,
           JSON.stringify({
             data: mockRuleset2._rules.join('\n'),
             cacheKey: mockRuleset2.location,
@@ -211,7 +223,7 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.update()
 
       const sites = await siteReputationClient.getMaliciousSites()
-      expect(sites).toEqual(['buybuybuy.com', 'federation.com', 'romulan.com'])
+      expect(sites).toEqual([...mockRuleset1._rules, ...mockRuleset2._rules])
     })
 
     it('should throw if update is needed', async () => {
@@ -234,27 +246,30 @@ describe('SudoSiteReputationClient', () => {
       // Test default ruleset
       await siteReputationClient.update()
       const siteReputationData = await siteReputationClient.getSiteReputation(
-        'worf.org',
+        'spock.org',
       )
       expect(siteReputationData.isMalicious).toBe(false)
 
       // Test initial cache
-      const cacheValue = await storageProvider.getItem(rulesetStorageKey)
+      const cacheValue = await storageProvider.getItem(malwareRulesetStorageKey)
       expect(JSON.parse(cacheValue).cacheKey).toBe(mockRuleset1.location)
 
       // Act
-      newRulesetProvider.ruleset = mockRuleset2
+      newRulesetProvider.malwareRuleset = mockRuleset3
+      newRulesetProvider.phishingRuleset = mockRuleset4
       await siteReputationClient.update()
 
       // Test update ruleset
       const updatedSiteReputationData = await siteReputationClient.getSiteReputation(
-        'worf.org',
+        'spock.org',
       )
       expect(updatedSiteReputationData.isMalicious).toBe(true)
 
       // Test updated cache
-      const updatedCacheValue = await storageProvider.getItem(rulesetStorageKey)
-      expect(JSON.parse(updatedCacheValue).cacheKey).toBe(mockRuleset2.location)
+      const updatedCacheValue = await storageProvider.getItem(
+        malwareRulesetStorageKey,
+      )
+      expect(JSON.parse(updatedCacheValue).cacheKey).toBe(mockRuleset3.location)
     })
 
     it('should not set cache if not modified', async () => {
@@ -272,7 +287,7 @@ describe('SudoSiteReputationClient', () => {
       expect(siteReputationData.isMalicious).toBe(true)
 
       // Test initial cache
-      const cacheValue = await storageProvider.getItem(rulesetStorageKey)
+      const cacheValue = await storageProvider.getItem(malwareRulesetStorageKey)
       expect(JSON.parse(cacheValue).cacheKey).toBe(mockRuleset1.location)
 
       // Act
@@ -285,7 +300,9 @@ describe('SudoSiteReputationClient', () => {
       expect(updatedSiteReputationData.isMalicious).toBe(true)
 
       // Test updated cache
-      const updatedCacheValue = await storageProvider.getItem(rulesetStorageKey)
+      const updatedCacheValue = await storageProvider.getItem(
+        malwareRulesetStorageKey,
+      )
       expect(JSON.parse(updatedCacheValue).cacheKey).toBe(mockRuleset1.location)
     })
 
@@ -321,7 +338,7 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.getSiteReputation('federation.com')
 
       const rulesetDataBeforeClear = await storageProvider.getItem(
-        rulesetStorageKey,
+        malwareRulesetStorageKey,
       )
       const lastUpdateBeforeClear = await storageProvider.getItem(
         lastUpdatePerformedAtStorageKey,
@@ -336,7 +353,7 @@ describe('SudoSiteReputationClient', () => {
 
       await siteReputationClient.clearStorage()
       const rulesetDataAfterClear = await storageProvider.getItem(
-        rulesetStorageKey,
+        malwareRulesetStorageKey,
       )
       const lastUpdateAfterClear = await storageProvider.getItem(
         lastUpdatePerformedAtStorageKey,

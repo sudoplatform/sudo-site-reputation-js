@@ -2,6 +2,7 @@ import { NotAuthorizedError } from '@sudoplatform/sudo-common'
 import { SudoUserClient } from '@sudoplatform/sudo-user'
 import { AuthenticationStore } from '@sudoplatform/sudo-user/lib/core/auth-store'
 
+import { RulesetType } from '../../src'
 import {
   DefaultRulesetProvider,
   DefaultRulesetProviderProps,
@@ -34,7 +35,7 @@ describe('DefaultRulesetProvider', () => {
     const eTagRegex = /"[0-9a-f]*"$/
     const rulesetProvider = new DefaultRulesetProvider(testProps)
 
-    const result = await rulesetProvider.downloadRuleset()
+    const result = await rulesetProvider.downloadRuleset(RulesetType.MALWARE)
 
     if (result === 'not-modified') fail()
     expect(result.data.length).toBeGreaterThan(0)
@@ -44,19 +45,20 @@ describe('DefaultRulesetProvider', () => {
   it('should not download if etag has not changed', async () => {
     const ruleSetProvider = new DefaultRulesetProvider(testProps)
 
-    const result1 = await ruleSetProvider.downloadRuleset()
+    const result1 = await ruleSetProvider.downloadRuleset(RulesetType.MALWARE)
     const result2 = await ruleSetProvider.downloadRuleset(
+      RulesetType.MALWARE,
       (result1 as RulesetContent).cacheKey,
     )
 
     expect(result2 as string).toBe('not-modified')
   })
 
-  fit('should throw `NotAuthorizedError` if user is not authorized', async () => {
+  it('should throw `NotAuthorizedError` if user is not authorized', async () => {
     await invalidateAuthTokens(authStore, userClient)
     const ruleSetProvider = new DefaultRulesetProvider(testProps)
 
-    const promise = ruleSetProvider.downloadRuleset()
+    const promise = ruleSetProvider.downloadRuleset(RulesetType.MALWARE)
 
     await expect(promise).rejects.toThrow(NotAuthorizedError)
   })

@@ -4,9 +4,9 @@ import S3 from 'aws-sdk/clients/s3'
 import { CognitoIdentityCredentials } from 'aws-sdk/lib/core'
 
 import { RulesetContent, RulesetProvider } from './ruleset-provider'
+import { RulesetType } from './ruleset-type'
 
 const s3Prefix = '/reputation-lists/'
-const s3RulesetKey = `${s3Prefix}MALICIOUSDOMAIN/urlhaus-filter-domains-online.txt`
 
 export interface DefaultRulesetProviderProps {
   userClient: SudoUserClient
@@ -19,20 +19,50 @@ export interface DefaultRulesetProviderProps {
 export class DefaultRulesetProvider implements RulesetProvider {
   constructor(private props: DefaultRulesetProviderProps) {}
 
+  private availableRulesetKeys: string[] = []
+
   public async downloadRuleset(
+    rulesetType: RulesetType,
     cacheKey?: string,
   ): Promise<RulesetContent | 'not-modified'> {
     const s3 = await this.getS3Client()
 
-    let response
+    let rulesetDataString = ''
+    let eTag = ''
     try {
-      response = await s3
-        .getObject({
-          Bucket: this.props.bucket,
-          Key: s3RulesetKey,
-          IfNoneMatch: cacheKey,
-        })
-        .promise()
+      // download the available rulesets if none are available
+      if (this.availableRulesetKeys.length === 0) {
+        await this.listAvailableRulesets()
+      }
+      const rulesetKeysOfThisType = this.availableRulesetKeys.filter((key) => {
+        const pathComponents = key.split('/')
+        const availableRulesetType = pathComponents[2]
+        // grab the third item [0] should be an empty string, [1] should be the root path, [2] should be the ruleset type
+        return (
+          (availableRulesetType === RulesetType.MALWARE ||
+            availableRulesetType === RulesetType.PHISHING) &&
+          pathComponents.length > 2 &&
+          availableRulesetType === rulesetType
+        )
+      })
+      for (const rulesetKey of rulesetKeysOfThisType) {
+        const response = await s3
+          .getObject({
+            Bucket: this.props.bucket,
+            Key: rulesetKey,
+            IfNoneMatch: cacheKey,
+          })
+          .promise()
+        if (!response.Body) {
+          throw new Error('Unexpected. Could not get body from S3 response.')
+        }
+        if (!response.ETag) {
+          throw new Error('Unexpected. Could not get ETag from S3 response.')
+        }
+        rulesetDataString += response.Body.toString('utf-8')
+        // grab the etag of the last item for caching purposes
+        eTag = response.ETag
+      }
     } catch (error) {
       if (error?.code === 'NotModified') {
         return 'not-modified'
@@ -41,14 +71,32 @@ export class DefaultRulesetProvider implements RulesetProvider {
       }
     }
 
-    if (!response.Body) {
-      throw new Error('Unexpected. Could not get body from S3 response.')
+    return {
+      data: rulesetDataString,
+      cacheKey: eTag,
+    }
+  }
+
+  async listAvailableRulesets(): Promise<string[]> {
+    const s3 = await this.getS3Client()
+    const result = await s3
+      .listObjects({
+        Bucket: this.props.bucket,
+        Prefix: s3Prefix,
+      })
+      .promise()
+
+    if (!result.Contents) {
+      throw new Error('Unexpected. Cannot get Contents from S3 result.')
     }
 
-    return {
-      data: response.Body.toString('utf-8'),
-      cacheKey: response.ETag,
-    }
+    this.availableRulesetKeys = result.Contents.map(({ Key }) => {
+      if (!Key) {
+        throw new Error('Cannot interpret S3 Object result.')
+      }
+      return Key
+    })
+    return this.availableRulesetKeys
   }
 
   private async getS3Client(): Promise<S3> {
