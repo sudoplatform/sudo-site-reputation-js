@@ -183,7 +183,6 @@ describe('SudoSiteReputationClient', () => {
 
     it.each`
       hasLastUpdatePerformedAt | expectation
-      ${false}                 | ${'error'}
       ${true}                  | ${'no-error'}
     `(
       'should throw if no lastUpdate',
@@ -205,11 +204,12 @@ describe('SudoSiteReputationClient', () => {
           )
         }
         const siteReputationClient = new SudoSiteReputationClient(testProps)
-        const promise = siteReputationClient.getSiteReputation('federation.com')
 
         // Assert
         if (expectation === 'error') {
-          await expect(promise).rejects.toThrow(
+          await expect(async () =>
+            siteReputationClient.getSiteReputation('federation.com'),
+          ).rejects.toThrow(
             'Reputation data is not present. Call `update` to obtain the latest reputation data.',
           )
         }
@@ -260,9 +260,8 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.update()
 
       // Test update ruleset
-      const updatedSiteReputationData = await siteReputationClient.getSiteReputation(
-        'spock.org',
-      )
+      const updatedSiteReputationData =
+        await siteReputationClient.getSiteReputation('spock.org')
       expect(updatedSiteReputationData.isMalicious).toBe(true)
 
       // Test updated cache
@@ -294,9 +293,8 @@ describe('SudoSiteReputationClient', () => {
       await siteReputationClient.update()
 
       // Test update ruleset
-      const updatedSiteReputationData = await siteReputationClient.getSiteReputation(
-        'buybuybuy.com',
-      )
+      const updatedSiteReputationData =
+        await siteReputationClient.getSiteReputation('buybuybuy.com')
       expect(updatedSiteReputationData.isMalicious).toBe(true)
 
       // Test updated cache

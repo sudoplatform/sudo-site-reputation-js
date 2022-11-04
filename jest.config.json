@@ -1,7 +1,7 @@
 {
   "testEnvironment": "node",
   "testMatch": ["<rootDir>/src/**/*.spec.ts"],
-  "testPathIgnorePatterns": ["/node_modules/", "/lib/"],
+  "testPathIgnorePatterns": ["/node_modules/", "/lib/", "/cjs/", "/types/"],
   "clearMocks": true,
   "collectCoverageFrom": ["src/**/*.ts", "!**/*.d.ts", "!node_modules/**"],
   "coverageReporters": ["text", "json-summary"],
@@ -12,6 +12,11 @@
       "branches": 0,
       "functions": 90,
       "lines": 90
+    }
+  },
+  "globals": {
+    "ts-jest": {
+      "tsconfig": "tsconfig.test.json"
     }
   }
 }

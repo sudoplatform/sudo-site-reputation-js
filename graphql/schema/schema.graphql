@@ -1,0 +1,78 @@
+"""
+Represents the status of searching for a site reputation result
+"""
+enum ReputationStatus {
+  """
+  URI found in dataset
+  """
+  Success
+
+  """
+  URI not found in dataset
+  """
+  NotFound
+}
+
+"""
+Represents the scope of the search
+"""
+enum Scope {
+  """
+  Matched on domain
+  """
+  Domain
+
+  """
+  Matched on path
+  """
+  Path
+}
+
+"""
+Represents the categorization of a url
+"""
+type Category {
+  id: Int!
+}
+
+"""
+Representation of a site reputation search result
+"""
+type Reputation @aws_iam @aws_cognito_user_pools {
+  """
+  Categories the URI is a member of
+  """
+  categories: [Category!]!
+
+  """
+  Scope of the match
+  """
+  scope: Scope
+
+  """
+  Search result status
+  """
+  status: ReputationStatus!
+
+  """
+  Confidence of the provided rating
+  """
+  confidence: Float
+
+  """
+  Time to Live - cache expiry for the response in seconds
+  """
+  ttl: Int!
+
+  """
+  Service applied business logic of site maliciousness
+  """
+  isMalicious: Boolean
+}
+
+"""
+Retrieve site reputation results for the specified uri
+"""
+type Query {
+  getSiteReputation(uri: String!): Reputation! @aws_iam @aws_cognito_user_pools
+}

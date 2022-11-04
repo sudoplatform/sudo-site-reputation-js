@@ -17,6 +17,9 @@ export interface RulesetContent {
   cacheKey?: string
 }
 
+/**
+ * A provider that manages downloading and providing available lists for consumption.
+ */
 export interface RulesetProvider {
   /**
    * Downloads rule set if cacheKey is valid.

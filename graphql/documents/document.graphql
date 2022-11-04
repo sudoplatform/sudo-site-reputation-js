@@ -1,0 +1,16 @@
+fragment Reputation on Reputation {
+  categories {
+    id
+  }
+  scope
+  status
+  confidence
+  ttl
+  isMalicious
+}
+
+query GetSiteReputation($uri: String!) {
+  getSiteReputation(uri: $uri) {
+    ...Reputation
+  }
+}

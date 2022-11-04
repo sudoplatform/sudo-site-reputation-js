@@ -2,9 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "declaration": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "outDir": "types"
   },
-  "files": ["src/index.ts"],
-  "include": [],
-  "exclude": []
+  "exclude": ["tests/**/*"]
 }

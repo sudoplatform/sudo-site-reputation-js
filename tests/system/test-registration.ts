@@ -1,10 +1,17 @@
 import fs from 'fs'
 import path from 'path'
 
-import { DefaultConfigurationManager } from '@sudoplatform/sudo-common'
-import { DefaultSudoUserClient, SudoUserClient } from '@sudoplatform/sudo-user'
-import { AuthenticationStore } from '@sudoplatform/sudo-user/lib/core/auth-store'
-import { TESTAuthenticationProvider } from '@sudoplatform/sudo-user/lib/user/auth-provider'
+import {
+  DefaultConfigurationManager,
+  DefaultSudoKeyManager,
+  SudoKeyManager,
+} from '@sudoplatform/sudo-common'
+import {
+  DefaultSudoUserClient,
+  SudoUserClient,
+  TESTAuthenticationProvider,
+} from '@sudoplatform/sudo-user'
+import { WebSudoCryptoProvider } from '@sudoplatform/sudo-web-crypto-provider'
 
 import { requireEnv } from '../../utils/require-env'
 import { logger } from './logger'
@@ -57,33 +64,34 @@ const testAuthProvider = new TESTAuthenticationProvider(
 )
 
 export async function registerUser(): Promise<{
-  authStore: AuthenticationStore
+  keyManager: SudoKeyManager
   userClient: SudoUserClient
 }> {
-  const authStore = new AuthenticationStore()
+  const cryptoProvider = new WebSudoCryptoProvider('ns', 'sr-service')
+  const keyManager = new DefaultSudoKeyManager(cryptoProvider)
   const userClient = new DefaultSudoUserClient({
-    authenticationStore: authStore,
+    sudoKeyManager: keyManager,
     logger,
   })
 
   await userClient.registerWithAuthenticationProvider(testAuthProvider)
   await userClient.signInWithKey()
 
-  return { userClient, authStore }
+  return { userClient, keyManager }
 }
 
 export async function invalidateAuthTokens(
-  authStore: AuthenticationStore,
+  keyManager: SudoKeyManager,
   userClient: SudoUserClient,
 ): Promise<void> {
   // Get current tokens
-  const idToken = authStore.getItem('idToken')!
-  const refreshToken = authStore.getItem('refreshToken')!
+  const idToken = await keyManager.getPassword('idToken')!
+  const refreshToken = await keyManager.getPassword('refreshToken')!
 
   // Do global signout to invalidate the tokens
   await userClient.globalSignOut() // this clears auth store
 
   // Restore tokens to auth store so we can try and use them
-  await authStore.setItem('idToken', idToken)
-  await authStore.setItem('refreshToken', refreshToken)
+  await keyManager.addPassword(idToken!, 'idToken')
+  await keyManager.addPassword(refreshToken!, 'refreshToken')
 }

@@ -7,3 +7,5 @@ src/gen
 yarn-error.log
 .DS_Store
 system-tests.log
+types/
+cjs/

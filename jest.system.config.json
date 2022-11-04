@@ -2,6 +2,11 @@
   "testEnvironment": "node",
   "setupFilesAfterEnv": ["<rootDir>/tests/setup-system-tests.ts"],
   "testMatch": ["<rootDir>/tests/system/**/*.spec.ts"],
-  "testPathIgnorePatterns": ["/node_modules/", "/lib/"],
-  "clearMocks": true
+  "testPathIgnorePatterns": ["/node_modules/", "/lib/", "/cjs/", "/types/"],
+  "clearMocks": true,
+  "globals": {
+    "ts-jest": {
+      "tsconfig": "tsconfig.system.json"
+    }
+  }
 }

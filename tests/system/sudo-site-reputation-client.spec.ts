@@ -1,20 +1,16 @@
 import {
-  SudoSiteReputationClient,
-  SudoSiteReputationClientProps,
-} from '../../lib'
-import {
   DefaultRulesetProvider,
   DefaultRulesetProviderProps,
-} from '../../lib/default-ruleset-provider'
-import { MemoryStorageProvider } from '../../lib/memory-storage-provider'
-import { RulesetProvider } from '../../lib/ruleset-provider'
-import { StorageProvider } from '../../lib/storage-provider'
-import {
+  MemoryStorageProvider,
+  RulesetProvider,
+  RulesetType,
   Status,
+  StorageProvider,
+  SudoSiteReputationClient,
+  SudoSiteReputationClientProps,
   lastUpdatePerformedAtStorageKey,
   malwareRulesetStorageKey,
-} from '../../lib/sudo-site-reputation-client'
-import { RulesetType } from '../../src'
+} from '../..'
 import { registerUser, sdkConfig } from './test-registration'
 
 let storageProvider: StorageProvider

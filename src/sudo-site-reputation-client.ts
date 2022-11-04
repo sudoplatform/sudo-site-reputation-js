@@ -13,6 +13,9 @@ export const malwareRulesetStorageKey = 'maliciousRulesetStorageKey'
 export const phishingRulesetStorageKey = 'phishingRulesetStorageKey'
 export const lastUpdatePerformedAtStorageKey = 'lastUpdatePerformedAtStorageKey'
 
+/**
+ * THe current status of client and the site reputation lists.
+ */
 export enum Status {
   /**
    * Client is (re)initializing and is not ready to process calls

@@ -1,25 +1,27 @@
 module.exports = {
   root: true,
-  ignorePatterns: ['/build/', '/docs/', '/lib/', '/node_modules/'],
+  ignorePatterns: [
+    '/build/',
+    '/docs/',
+    '/lib/',
+    'cjs',
+    'types',
+    '/node_modules/',
+  ],
   overrides: [
     {
       files: ['*.js'],
-      extends: 'eslint:recommended',
       parserOptions: { ecmaVersion: 2018 },
       env: { node: true },
     },
     {
       files: ['**/*.ts'],
-      plugins: ['@typescript-eslint', 'import'],
+      plugins: ['@typescript-eslint', 'import', 'jest', 'tree-shaking'],
       parser: '@typescript-eslint/parser',
       parserOptions: {
         project: './tsconfig.json',
       },
-      extends: [
-        'plugin:@typescript-eslint/recommended',
-        'prettier',
-        'prettier/@typescript-eslint',
-      ],
+      extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
       rules: {
         // Disallow `any`.  (This is overridden for test files, below)
         '@typescript-eslint/no-explicit-any': 'error',
@@ -42,6 +44,15 @@ module.exports = {
             allowTypedFunctionExpressions: true,
           },
         ],
+
+        // Avoids side effects in initialization
+        // https://www.npmjs.com/package/eslint-plugin-tree-shaking
+        'tree-shaking/no-side-effects-in-initialization': [
+          'error',
+          {
+            noSideEffectsWhenCalled: [{ module: 'io-ts', functions: ['type'] }],
+          },
+        ],
       },
     },
     {
@@ -50,17 +61,28 @@ module.exports = {
         '@typescript-eslint/no-explicit-any': 'off',
       },
     },
+    // Unit tests
     {
-      files: [
-        'tests/**/*.ts',
-        '**/*.spec.ts',
-        '**/test/**/*.ts',
-        'integration-tests/**/*.ts',
-        'src/utils/testing/**/*.ts',
-      ],
+      files: ['**/*.spec.ts', 'src/utils/testing/**/*.ts'],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
+        'tree-shaking/no-side-effects-in-initialization': 'off',
+      },
+      parserOptions: {
+        project: './tsconfig.test.json',
+      },
+    },
+    // System tests
+    {
+      files: ['tests/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        'tree-shaking/no-side-effects-in-initialization': 'off',
+      },
+      parserOptions: {
+        project: './tsconfig.system.json',
       },
     },
   ],
