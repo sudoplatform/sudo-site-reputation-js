@@ -10,6 +10,11 @@ export {
   lastUpdatePerformedAtStorageKey,
   malwareRulesetStorageKey,
 } from './sudo-site-reputation-client'
+export {
+  RealtimeReputationClient,
+  RealtimeReputationClientProps,
+} from './realtime-site-reputation-client'
+export { ApiClient } from './apiClient'
 export { Config, IotsConfig } from './config'
 export * as Entitlements from './entitlements'
 export { StorageProvider } from './storage-provider'
