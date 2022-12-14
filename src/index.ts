@@ -11,6 +11,8 @@ export {
   malwareRulesetStorageKey,
 } from './sudo-site-reputation-client'
 export {
+  MaliciousState,
+  RealtimeReputation,
   RealtimeReputationClient,
   RealtimeReputationClientProps,
 } from './realtime-site-reputation-client'

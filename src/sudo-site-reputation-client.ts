@@ -46,7 +46,7 @@ export enum Status {
  * Return type of {@link SudoSiteReputationClient.getSiteReputation}
  */
 export interface SiteReputation {
-  /** True if a site is malicious; false if not. */
+  /** Returns `true` if malicious, `false` if not, and `undefined` if unknown. */
   isMalicious: boolean
 }
 
