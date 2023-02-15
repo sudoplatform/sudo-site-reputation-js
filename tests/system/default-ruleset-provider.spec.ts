@@ -1,4 +1,4 @@
-import { SudoKeyManager } from '@sudoplatform/sudo-common'
+import { NotAuthorizedError, SudoKeyManager } from '@sudoplatform/sudo-common'
 import { SudoUserClient } from '@sudoplatform/sudo-user'
 
 import { RulesetType } from '../../src'
@@ -53,13 +53,12 @@ describe('DefaultRulesetProvider', () => {
     expect(result2 as string).toBe('not-modified')
   })
 
-  // FUTURE TODO: Reevaluate how this stuff works
   it('should throw `NotAuthorizedError` if user is not authorized', async () => {
     await invalidateAuthTokens(keyManager, userClient)
     const ruleSetProvider = new DefaultRulesetProvider(testProps)
 
-    const promise = ruleSetProvider.downloadRuleset(RulesetType.MALWARE)
-
-    await expect(promise).rejects.toThrowError()
+    await expect(
+      ruleSetProvider.downloadRuleset(RulesetType.MALWARE),
+    ).rejects.toThrow(NotAuthorizedError)
   })
 })

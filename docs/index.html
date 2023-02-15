@@ -16,31 +16,40 @@
 <a href="#site-reputation-sdk-js" id="site-reputation-sdk-js" style="color: inherit; text-decoration: none;">
   <h1>Site Reputation SDK JS</h1>
 </a>
+<p>The Site Reputation SDK JS (SR) provides two different clients to verify a site&#39;s reputation. The <code>RealtimeReputationClient</code> fetches a site&#39;s reputation with additional information from a database and the <code>SiteReputationClient</code> uses open-source lists to determine a site&#39;s reputation.</p>
 
 <a href="#pre-reqs" id="pre-reqs" style="color: inherit; text-decoration: none;">
   <h2>Pre-reqs</h2>
 </a>
 <ol>
-<li>Node JS v12.16+</li>
+<li>Node JS v16.10+</li>
 <li>Yarn 1.22+</li>
 </ol>
 
 <a href="#building" id="building" style="color: inherit; text-decoration: none;">
   <h2>Building</h2>
 </a>
+<p>After cloning the project, ensure that the project is running successfully by:</p>
 <pre><code><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">install</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">build</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">verify</span>
 </code></pre>
 
 <a href="#system-tests" id="system-tests" style="color: inherit; text-decoration: none;">
   <h2>System Tests</h2>
 </a>
-<p>System tests run against a live environment and use the built libary from <code>lib/</code>.</p>
+<p>System tests run against a live environment and use the built libary from <code>lib/</code>. In order to run system tests locally, follow these steps to set up the environment.</p>
 <ol>
+<li>Create a new <code>.env</code> file at the root of the project</li>
+<li>Copy the contents of <code>.env.example</code> and paste them in the new <code>.env</code> file</li>
+<li>Create a new folder at the root called <code>config/</code></li>
 <li>Download SDK Config from Admin Console and save it in <code>config/sudoplatformconfig.json</code></li>
 <li>Download TEST registration key from Admin Console and save it in <code>config/register_key.private</code>.</li>
 <li>Create a file <code>config/register_key.id</code> with the TEST registration key ID in it.</li>
-<li><code>yarn build</code></li>
-<li><code>yarn test:system</code></li>
+<li>Run the following commands:</li>
+</ol>
+<pre><code><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">build</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1">:</span><span class="hl-0">system</span>
+</code></pre>
+<ol start="8">
+<li>After installing packages and building the project, you should be fine just running <code>yarn test:system</code> each time after</li>
 </ol>
 </div></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">

@@ -1,17 +1,28 @@
-import { url } from 'inspector'
-
 import { DefaultApiClientManager } from '@sudoplatform/sudo-api-client'
+import { NotAuthorizedError, SudoKeyManager } from '@sudoplatform/sudo-common'
+import { SudoUserClient } from '@sudoplatform/sudo-user'
 
-import { RealtimeReputationClient } from '../../src/realtime-site-reputation-client'
-import { registerUser, sdkConfig } from './test-registration'
+import { ApiClient } from '../../src/apiClient'
+import {
+  RealtimeReputationClient,
+  RealtimeReputationClientProps,
+} from '../../src/realtime-site-reputation-client'
+import { invalidateAuthTokens, registerUser } from './test-registration'
 
+let keyManager: SudoKeyManager
+let userClient: SudoUserClient
 let testProps: RealtimeReputationClientProps
+let apiClient: ApiClient
+
 beforeAll(async () => {
   const services = await registerUser()
-  const apiClient = DefaultApiClientManager.getInstance()
-  apiClient.setAuthClient(services.userClient)
+  keyManager = services.keyManager
+  userClient = services.userClient
+  DefaultApiClientManager.getInstance().setAuthClient(services.userClient)
+  const client = DefaultApiClientManager.getInstance()
+  apiClient = new ApiClient(client)
   testProps = {
-    apiclient: apiClient,
+    apiClient,
   }
 })
 
@@ -19,10 +30,10 @@ describe('RealtimeReputationClient', () => {
   describe('getSiteReputation()', () => {
     it.each`
       domain                            | expected
-      ${'http://www.example.com'}       | ${false}
-      ${'http://8.8.8.8'}               | ${false}
-      ${'http://federation.org'}        | ${false}
-      ${'http://vulcan.federation.org'} | ${false}
+      ${'http://www.example.com'}       | ${'notMalicious'}
+      ${'http://8.8.8.8'}               | ${'notMalicious'}
+      ${'http://federation.org'}        | ${'notMalicious'}
+      ${'http://vulcan.federation.org'} | ${'notMalicious'}
     `('should return false for safe sites', async ({ domain, expected }) => {
       const testInstance = new RealtimeReputationClient(testProps)
       const reputationResult = await testInstance.getSiteReputation(domain)
@@ -34,7 +45,18 @@ describe('RealtimeReputationClient', () => {
       const reputationResult = await testInstance.getSiteReputation(
         'http://malware.wicar.org/data/eicar.com',
       )
-      expect(reputationResult.isMalicious).toBe(true)
+      expect(reputationResult.isMalicious).toBe('malicious')
     })
+  })
+
+  // This test needs to be last.
+  it('should throw NotAuthorizedError', async () => {
+    await invalidateAuthTokens(keyManager, userClient)
+
+    const testInstance = new RealtimeReputationClient(testProps)
+
+    await expect(testInstance.getSiteReputation('anysite.com')).rejects.toThrow(
+      NotAuthorizedError,
+    )
   })
 })

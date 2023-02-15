@@ -15,9 +15,7 @@ export interface RealtimeReputation {
   /** The algorithmic calculation of the confidence of the rating */
   confidence?: number
 
-  /** Returns `malicious` if malicious,
-   * `notMalicious` if not, and `unknown`
-   * if unable to be determined. */
+  /** Returns `malicious` if malicious, `notMalicious` if not, and `unknown` if unable to be determined. */
   isMalicious: MaliciousState
 
   /** The scope of the search */
@@ -54,7 +52,9 @@ export class RealtimeReputationClient {
         ? 'malicious'
         : 'notMalicious'
     return {
-      categories: reputation.categories.map((c) => Number(c)),
+      categories: reputation.categories
+        .map((c) => Number(c))
+        .filter((n) => !isNaN(n)),
       confidence: reputation.confidence,
       isMalicious: malicousState,
       scope: reputation.scope === 'Domain' ? 'domain' : 'path',

@@ -9,3 +9,4 @@ yarn-error.log
 system-tests.log
 types/
 cjs/
+.env

@@ -4,6 +4,7 @@ import path from 'path'
 import {
   DefaultConfigurationManager,
   DefaultSudoKeyManager,
+  KeyDataKeyType,
   SudoKeyManager,
 } from '@sudoplatform/sudo-common'
 import {
@@ -12,34 +13,59 @@ import {
   TESTAuthenticationProvider,
 } from '@sudoplatform/sudo-user'
 import { WebSudoCryptoProvider } from '@sudoplatform/sudo-web-crypto-provider'
+import * as dotenv from 'dotenv'
 
 import { requireEnv } from '../../utils/require-env'
 import { logger } from './logger'
 
+dotenv.config()
+
+interface Env {
+  REGISTER_KEY: string
+  REGISTER_KEY_ID: string
+  SDK_CONFIG: string
+}
+
+function loadEnv(): Env {
+  const env: Partial<Env> = {}
+  Object.keys(process.env)
+    .sort()
+    .filter((key) => key.startsWith('config_'))
+    .forEach((key) => {
+      const path = key.replace(/^config_/, '')
+      const value = process.env[key]
+      env[path] = mapConfigValue(value)
+    })
+  return env as Env
+}
+
+function mapConfigValue(value: unknown): string {
+  // If value is a path, resolve HOME
+  if (typeof value === 'string' && value[0] === '~') {
+    value = path.join(process.env.HOME ?? './', value.slice(1))
+  }
+
+  // If a file exists for that path, use the file contents as the value
+  if (typeof value === 'string' && fs.existsSync(value)) {
+    value = fs.readFileSync(path.resolve(value)).toString('utf-8').trim()
+  }
+
+  return value as string
+}
+
+const loaded = loadEnv()
 const env = requireEnv({
   REGISTER_KEY: {
     type: 'string',
-    default: () =>
-      fs.readFileSync(
-        path.resolve(__dirname, `../../config/register_key.private`),
-        'ascii',
-      ),
+    default: loaded.REGISTER_KEY,
   },
   REGISTER_KEY_ID: {
     type: 'string',
-    default: () =>
-      fs.readFileSync(
-        path.resolve(__dirname, `../../config/register_key.id`),
-        'ascii',
-      ),
+    default: loaded.REGISTER_KEY_ID,
   },
   SDK_CONFIG: {
     type: 'string',
-    default: () =>
-      fs.readFileSync(
-        path.resolve(__dirname, `../../config/sudoplatformconfig.json`),
-        'utf8',
-      ),
+    default: loaded.SDK_CONFIG,
   },
 })
 
@@ -85,13 +111,28 @@ export async function invalidateAuthTokens(
   userClient: SudoUserClient,
 ): Promise<void> {
   // Get current tokens
-  const idToken = await keyManager.getPassword('idToken')!
-  const refreshToken = await keyManager.getPassword('refreshToken')!
+  const keyData = await keyManager.exportKeys()
 
   // Do global signout to invalidate the tokens
   await userClient.globalSignOut() // this clears auth store
 
-  // Restore tokens to auth store so we can try and use them
-  await keyManager.addPassword(idToken!, 'idToken')
-  await keyManager.addPassword(refreshToken!, 'refreshToken')
+  // Set tokens back
+  keyData.map((value) => {
+    switch (value.type) {
+      case KeyDataKeyType.SymmetricKey:
+        void keyManager.addSymmetricKey(value.data, value.name)
+        break
+      case KeyDataKeyType.RSAPublicKey:
+        void keyManager.addPublicKey(value.data, value.name)
+        break
+      case KeyDataKeyType.RSAPrivateKey:
+        void keyManager.addPrivateKey(value.data, value.name)
+        break
+      case KeyDataKeyType.Password:
+        void keyManager.addPassword(value.data, value.name)
+        break
+      default:
+        throw new Error(`Unknown KeyDataKeyType: ${value.type}`)
+    }
+  })
 }

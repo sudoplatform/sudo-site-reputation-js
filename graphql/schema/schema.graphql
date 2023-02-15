@@ -32,7 +32,7 @@ enum Scope {
 Represents the categorization of a url
 """
 type Category {
-  id: Int!
+  id: ID!
 }
 
 """
