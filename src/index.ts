@@ -4,18 +4,18 @@
 
 export {
   Status,
-  SudoSiteReputationClient,
-  SudoSiteReputationClientProps,
-  SiteReputation,
+  LegacySudoSiteReputationClient,
+  LegacySudoSiteReputationClientProps,
+  LegacySiteReputation,
   lastUpdatePerformedAtStorageKey,
   malwareRulesetStorageKey,
-} from './sudo-site-reputation-client'
+} from './legacy-sudo-site-reputation-client'
 export {
-  MaliciousState,
-  RealtimeReputation,
-  RealtimeReputationClient,
-  RealtimeReputationClientProps,
-} from './realtime-site-reputation-client'
+  ReputationStatus,
+  SiteReputation,
+  SudoSiteReputationClient,
+  SudoSiteReputationClientProps,
+} from './sudo-site-reputation-client'
 export { ApiClient } from './apiClient'
 export { Config, IotsConfig } from './config'
 export * as Entitlements from './entitlements'

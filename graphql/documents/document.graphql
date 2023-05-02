@@ -1,12 +1,5 @@
 fragment Reputation on Reputation {
-  categories {
-    id
-  }
-  scope
-  status
-  confidence
-  ttl
-  isMalicious
+  reputationStatus
 }
 
 query GetSiteReputation($uri: String!) {
