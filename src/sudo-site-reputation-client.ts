@@ -13,6 +13,7 @@ export type ReputationStatus = 'NOTMALICIOUS' | 'MALICIOUS' | 'UNKNOWN'
 export interface SiteReputation {
   /** Returns `MALICIOUS` if malicious, `NOTMALICIOUS` if not, and `UNKNOWN` if unable to be determined. */
   reputationStatus: ReputationStatus
+  categories: string[]
 }
 
 export interface SudoSiteReputationClientProps {
@@ -36,15 +37,36 @@ export class SudoSiteReputationClient {
   }
 
   public async getSiteReputation(url: string): Promise<SiteReputation> {
-    const reputationStatus = await this.reputationCache.getItem(url)
-    if (reputationStatus) {
-      return { reputationStatus: reputationStatus as ReputationStatus }
+    const cachedReputationString = await this.reputationCache.getItem(url)
+
+    if (cachedReputationString) {
+      // Try to parse the cached string into an object
+      try {
+        const cachedReputation = JSON.parse(
+          cachedReputationString,
+        ) as SiteReputation
+        return cachedReputation
+      } catch (error) {
+        // Handle potential JSON parsing errors, logging them
+        console.error('Error parsing cached reputation:', error)
+      }
     }
+
     const response = await this.apiClient.getSiteReputation(url)
-    const reputation = {
+
+    // Filter out undefined values from response.categories
+    const categories = (response.categories ?? []).filter(
+      (category): category is string => category !== undefined,
+    )
+
+    const reputation: SiteReputation = {
       reputationStatus: response.reputationStatus,
+      categories: categories,
     }
-    await this.reputationCache.setItem(url, response.reputationStatus)
+
+    // When caching, convert the SiteReputation object back to a string
+    await this.reputationCache.setItem(url, JSON.stringify(reputation))
+
     return reputation
   }
 

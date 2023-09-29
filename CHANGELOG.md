@@ -1,3 +1,21 @@
+## 6.0.0
+
+### New
+
+- Update to node 18
+- Added support for additional site reputation categories from the API response.
+
+### Breaking
+
+- Removed legacy site reputation client and associated files.
+
+## 5.0.1
+
+### Fixes
+
+- Returns `InsufficientEntitlementsError` if the user has not redeemed entitlements.
+- Updates nonbreaking dependencies.
+
 ## 5.0.0
 
 #### Enhancements

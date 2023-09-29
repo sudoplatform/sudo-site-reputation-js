@@ -10,3 +10,4 @@ system-tests.log
 types/
 cjs/
 .env
+package.json.old

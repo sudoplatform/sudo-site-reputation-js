@@ -54,18 +54,42 @@ export class ApiClient {
       const [graphQLError] = clientError.graphQLErrors
       if (graphQLError) {
         this.log.debug('appSync query failed with error', { graphQLError })
-        // TODO: Throw a more specific graphQL error.
+        if (
+          graphQLError.message === 'sudoplatform.InsufficientEntitlementsError'
+        ) {
+          throw new InsufficientEntitlementsError()
+        }
       }
 
-      // TODO: email client transforms into a client erorr type and throws
+      // Log until we can figure out what errors to handle
+      this.log.debug('An error occurred:', { clientError })
+
       throw new NotImplementedError()
     }
 
     // TODO: Implement any required erorr handling here.
-    return result.data.getSiteReputation
+    return {
+      reputationStatus: result.data.getSiteReputation.reputationStatus,
+      categories: result.data.getSiteReputation.categories ?? [], // provide a default if it's missing
+    }
   }
 }
 
+/**
+ * Error thrown for insufficient entitlements to use service.
+ */
+export class InsufficientEntitlementsError extends Error {
+  constructor() {
+    super(
+      'Insufficient entitlements. Redeem entitlements before using the service.',
+    )
+    this.name = 'InsufficientEntitlementsError'
+  }
+}
+
+/**
+ * Used as a catch all for any errors that we don't know.
+ */
 export class NotImplementedError extends Error {
   constructor() {
     super('Not implemented')

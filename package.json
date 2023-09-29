@@ -47,7 +47,9 @@
     "**/apollo-link-http": "^1.5.16",
     "**/ua-parser-js": "^0.7.33",
     "undici": "^5.19.1",
-    "yaml": "^2.2.2"
+    "yaml": "^2.2.2",
+    "fast-xml-parser": "^4.2.4",
+    "semver": "^7.5.2"
   },
   "peerDependencies": {
     "@sudoplatform/sudo-api-client": "^12.2.1",
@@ -58,7 +60,6 @@
     "apollo-cache-inmemory": "^1.6.6",
     "aws-appsync": "4.1.7",
     "aws-cdk": "^2.76.0",
-    "aws-sdk": "^2.1364.0",
     "fake-indexeddb": "^4.0.1",
     "fp-ts": "^2.14.0",
     "graphql": "^15.8.0",
@@ -83,6 +84,8 @@
     "@graphql-codegen/typescript-operations": "^2.5.13",
     "@sudoplatform/sudo-api-client": "^12.2.1",
     "@sudoplatform/sudo-common": "^8.1.0",
+    "@sudoplatform/sudo-entitlements": "^16.0.3",
+    "@sudoplatform/sudo-entitlements-admin": "^11.2.1",
     "@sudoplatform/sudo-user": "^12.2.3",
     "@types/bunyan": "^1.8.6",
     "@types/jest": "^26.0.24",
@@ -119,6 +122,8 @@
     }
   },
   "auditSuppressions": {
-    "1091653": 1683223808
+    "1091653": 1683223808,
+    "1092330": 1689798752,
+    "1093108": 1696620101
   }
 }

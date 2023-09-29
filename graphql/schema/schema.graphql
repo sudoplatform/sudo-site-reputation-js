@@ -24,6 +24,7 @@ type Reputation @aws_iam @aws_cognito_user_pools {
   Search result status
   """
   reputationStatus: ReputationStatus!
+  categories: [String!]!
 }
 
 """
