@@ -1,7 +1,7 @@
 require('fake-indexeddb/auto')
 
 import { DefaultApiClientManager } from '@sudoplatform/sudo-api-client'
-import { NotAuthorizedError, SudoKeyManager } from '@sudoplatform/sudo-common'
+import { SudoKeyManager } from '@sudoplatform/sudo-common'
 import { DefaultSudoEntitlementsClient } from '@sudoplatform/sudo-entitlements'
 import { SudoEntitlementsAdminClient } from '@sudoplatform/sudo-entitlements-admin'
 import { SudoUserClient } from '@sudoplatform/sudo-user'
@@ -49,7 +49,6 @@ describe('SudoSiteReputationClient', () => {
       )
       expect(reputationResult.reputationStatus).toBe('UNKNOWN')
     })
-
     it('should return MALICIOUS for malicious sites', async () => {
       const testInstance = new SudoSiteReputationClient(testProps)
       const reputationResult = await testInstance.getSiteReputation(
@@ -58,7 +57,6 @@ describe('SudoSiteReputationClient', () => {
       expect(reputationResult.reputationStatus).toBe('MALICIOUS')
       expect(reputationResult.categories).toContain('MALWARE')
     })
-
     it('should return NOTMALICIOUS for not malicious sites', async () => {
       const testInstance = new SudoSiteReputationClient(testProps)
       const reputationResult = await testInstance.getSiteReputation(
@@ -69,7 +67,7 @@ describe('SudoSiteReputationClient', () => {
     })
   })
 
-  it('should throw InsufficientEntitlementsError', async () => {
+  it('should throw InsufficientEntitlementsError when entitlements are removed', async () => {
     const externalId = (await userClient.getUserName()) ?? ''
     await removeEntitlementsByName(
       externalId,
@@ -84,14 +82,13 @@ describe('SudoSiteReputationClient', () => {
     )
   })
 
-  // This test needs to be last.
-  it('should throw NotAuthorizedError', async () => {
+  it('should throw InsufficientEntitlementsError when auth tokens have been invalidated', async () => {
     await invalidateAuthTokens(keyManager, userClient)
 
     const testInstance = new SudoSiteReputationClient(testProps)
 
     await expect(testInstance.getSiteReputation('anysite.com')).rejects.toThrow(
-      NotAuthorizedError,
+      InsufficientEntitlementsError,
     )
   })
 })

@@ -8,6 +8,7 @@ import {
   Logger,
   isAppSyncNetworkError,
   mapNetworkErrorToClientError,
+  NotAuthorizedError,
 } from '@sudoplatform/sudo-common'
 import { NormalizedCacheObject } from 'apollo-cache-inmemory'
 import { ApolloError } from 'apollo-client/errors/ApolloError'
@@ -59,15 +60,20 @@ export class ApiClient {
         ) {
           throw new InsufficientEntitlementsError()
         }
+
+        if (
+          graphQLError.message === 'sudoplatform.ServiceError: Unauthorized'
+        ) {
+          throw new NotAuthorizedError()
+        }
       }
 
       // Log until we can figure out what errors to handle
       this.log.debug('An error occurred:', { clientError })
-
       throw new NotImplementedError()
     }
 
-    // TODO: Implement any required erorr handling here.
+    // TODO: Implement any required error handling here.
     return {
       reputationStatus: result.data.getSiteReputation.reputationStatus,
       categories: result.data.getSiteReputation.categories ?? [], // provide a default if it's missing

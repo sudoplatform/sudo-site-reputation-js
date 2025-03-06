@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>platform/platform-renovate-config"
+  ],
+  "schedule": ["* 13 8-14 * 1"],
+  "packageRules": [
+    {
+      "description": "we have not in general upgraded beyond major version 15. Updating to 16 will require work though the scope of this work has not been evaluated at this time.",
+      "matchPackageNames": ["graphql"],
+      "allowedVersions": "<16.x"
+    },
+    {
+      "description": "Node Fetch can only be version 2 or lower",
+      "matchPackageNames": [
+        "node-fetch"
+      ],
+      "allowedVersions": "<3.x"
+    }
+  ]
+}

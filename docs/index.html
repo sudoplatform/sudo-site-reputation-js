@@ -6,7 +6,7 @@
 <div id="tsd-toolbar-links"></div></div>
 <ul class="results">
 <li class="state loading">Preparing search index...</li>
-<li class="state failure">The search index is not available</li></ul><a href="" class="title">@sudoplatform/sudo-site-reputation</a></div>
+<li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">@sudoplatform/sudo-site-reputation</a></div>
 <div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="7" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="11" width="14" height="2" fill="var(--color-text)"></rect></svg></a></div></div></header>
 <div class="container container-main">
 <div class="col-8 col-content">
@@ -22,7 +22,7 @@
   <h2>Pre-reqs</h2>
 </a>
 <ol>
-<li>Node JS v16.10+</li>
+<li>Node JS v20.18+</li>
 <li>Yarn 1.22+</li>
 </ol>
 
@@ -36,7 +36,7 @@
 <a href="#system-tests" id="system-tests" style="color: inherit; text-decoration: none;">
   <h2>System Tests</h2>
 </a>
-<p>System tests run against a live environment and use the built libary from <code>lib/</code>. In order to run system tests locally, follow these steps to set up the environment.</p>
+<p>System tests run against a live environment and use the built library from <code>lib/</code>. In order to run system tests locally, follow these steps to set up the environment.</p>
 <ol>
 <li>Create a new <code>.env</code> file at the root of the project</li>
 <li>Copy the contents of <code>.env.example</code> and paste them in the new <code>.env</code> file</li>
@@ -44,6 +44,7 @@
 <li>Download SDK Config from Admin Console and save it in <code>config/sudoplatformconfig.json</code></li>
 <li>Download TEST registration key from Admin Console and save it in <code>config/register_key.private</code>.</li>
 <li>Create a file <code>config/register_key.id</code> with the TEST registration key ID in it.</li>
+<li>Copy the value of the internal API Key from the AWS AppSync settings for the Admin Console Project instance you are testing against.</li>
 <li>Run the following commands:</li>
 </ol>
 <pre><code><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">build</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1">:</span><span class="hl-0">system</span>
