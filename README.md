@@ -10,7 +10,7 @@ Please see the [Sudo Platform Developer Docs](https://docs.sudoplatform.com) for
 
 | Technology        | Supported version |
 | ----------------- | ----------------- |
-| Node              | >= 10.4.2         |
+| Node              | >= 20.18.0        |
 | Safari            | >= 14             |
 | Firefox           | last 2 versions   |
 | Chromium and Edge | last 2 versions   |
