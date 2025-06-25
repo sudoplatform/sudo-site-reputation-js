@@ -11,3 +11,4 @@ types/
 cjs/
 .env
 package.json.old
+.yarn/install-state.gz
